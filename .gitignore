@@ -213,6 +213,8 @@ tempCodeRunnerFile.py
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+test_db.sqlite3
+uploads/
 
 # Streamlit
 .streamlit/secrets.toml

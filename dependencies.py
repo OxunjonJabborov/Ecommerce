@@ -1,0 +1,45 @@
+import jwt
+import security
+
+from fastapi.params import Depends
+from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession as Session
+
+from enums import Roles
+from models import Users
+from database import get_db
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token yaroqsiz yoki muddati tugagan...",
+    )
+    try:
+        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        user_id: int | None = payload.get("sub")
+        if user_id is None:
+            return credentials_exception
+
+    except jwt.InvalidTokenError:
+        raise credentials_exception
+
+    user = await db.scalar(select(Users).where(Users.id == int(user_id)).options(selectinload(Users.profile)))
+
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+def role_checker(*allowed_roles: Roles):
+    async def checker(user: Users = Depends(get_current_user)):
+        allowed_values = {role.value for role in allowed_roles}
+        if user.role not in allowed_values:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ruxsat etilmagan... ")
+        return user
+    return checker
