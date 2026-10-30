@@ -1,14 +1,7 @@
-import os
-
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
-from dotenv import load_dotenv
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL muhit o'zgaruvchisi aniqlanmagan...")
+from config import DATABASE_URL
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_async_engine(DATABASE_URL, connect_args=connect_args, echo=True)

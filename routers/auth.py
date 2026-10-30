@@ -1,4 +1,3 @@
-import os
 import shutil
 import security
 
@@ -10,7 +9,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from enums import Roles
 from database import get_db
-from config import AVATAR_FOLDER
+from config import ADMIN_SECRET_KEY, AVATAR_FOLDER
 from models import Users, Profiles
 from dependencies import get_current_user
 from schemas.users import UserCreate, UserOut, ProfileUpdate, Token
@@ -33,7 +32,7 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
     count = await db.scalar(select(func.count()).select_from(Users))
     if count == 0:
         role = Roles.ADMIN.value
-    elif admin_secret and admin_secret == os.getenv("ADMIN_SECRET_KEY"):
+    elif admin_secret and admin_secret == ADMIN_SECRET_KEY:
         role = Roles.ADMIN.value
     else:
         role = user_in.role.value

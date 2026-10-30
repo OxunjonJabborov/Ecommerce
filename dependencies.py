@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 
+from config import SECRET_KEY
 from enums import Roles
 from models import Users
 from database import get_db
@@ -20,7 +21,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         detail="Token yaroqsiz yoki muddati tugagan...",
     )
     try:
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[security.ALGORITHM])
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise credentials_exception
