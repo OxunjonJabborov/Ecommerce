@@ -39,3 +39,17 @@ async def auth_client(client):
     token = response.json()["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
     return client
+
+
+@pytest_asyncio.fixture
+async def login_as(client):
+    """Foydalanuvchini ro'yxatdan o'tkazib, client'ga uning tokenini o'rnatadi."""
+    async def _login_as(email: str, role: str | None = None) -> AsyncClient:
+        body = {"email": email, "password": "test1234"}
+        if role:
+            body["role"] = role
+        await client.post("/api/auth/register", json=body)
+        response = await client.post("/api/auth/login", data={"username": email, "password": "test1234"})
+        client.headers["Authorization"] = f"Bearer {response.json()['access_token']}"
+        return client
+    return _login_as

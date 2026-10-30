@@ -65,3 +65,24 @@ async def test_first_user_is_admin(client: AsyncClient):
 
     me = await client.get("/api/auth/me")
     assert me.json()["role"] == "admin"
+
+
+async def test_update_profile(auth_client: AsyncClient):
+    response = await auth_client.put("/api/auth/me/profile", json={"full_name": "Ali Valiyev"})
+    assert response.status_code == 200
+    assert response.json()["profile"]["full_name"] == "Ali Valiyev"
+
+
+async def test_upload_avatar(auth_client: AsyncClient):
+    response = await auth_client.post("/api/auth/avatar", files={"file": ("rasm.png", b"fake", "image/png")})
+    assert response.status_code == 200
+    assert response.json()["avatar_url"] == "/uploads/avatars/1_avatar.png"
+
+    me = await auth_client.get("/api/auth/me")
+    assert me.json()["profile"]["avatar_url"] == "/uploads/avatars/1_avatar.png"
+
+
+async def test_invalid_token(client: AsyncClient):
+    client.headers["Authorization"] = "Bearer yaroqsiz"
+    response = await client.get("/api/auth/me")
+    assert response.status_code == 401

@@ -15,7 +15,7 @@ class Users(Base):
     role: Mapped[str] = mapped_column(Enum("admin", "seller", "buyer"), default="buyer")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    profile: Mapped["Profiles"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
+    profile: Mapped["Profiles"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
     products: Mapped[list["Products"]] = relationship(back_populates="seller", cascade="all, delete-orphan")
     orders: Mapped[list["Orders"]] = relationship(back_populates="buyer", cascade="all, delete-orphan")
 
@@ -61,7 +61,7 @@ class Products(Base):
 
     seller: Mapped["Users"] = relationship(back_populates="products")
     category: Mapped["Categories | None"] = relationship(back_populates="products")
-    tags: Mapped[list["Tags"]] = relationship(secondary="product_tags", back_populates="products")
+    tags: Mapped[list["Tags"]] = relationship(secondary="product_tags", back_populates="products", lazy="selectin")
     order_items: Mapped[list["OrderItems"]] = relationship(back_populates="product")
 
 
@@ -91,7 +91,7 @@ class Orders(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     buyer: Mapped["Users"] = relationship(back_populates="orders")
-    items: Mapped[list["OrderItems"]] = relationship(back_populates="order", cascade="all, delete-orphan")
+    items: Mapped[list["OrderItems"]] = relationship(back_populates="order", cascade="all, delete-orphan", lazy="selectin")
 
 
 class OrderItems(Base):
