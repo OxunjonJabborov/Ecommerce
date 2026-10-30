@@ -1,4 +1,5 @@
 import pytest
+import security
 from httpx import AsyncClient
 
 pytestmark = pytest.mark.asyncio
@@ -84,5 +85,12 @@ async def test_upload_avatar(auth_client: AsyncClient):
 
 async def test_invalid_token(client: AsyncClient):
     client.headers["Authorization"] = "Bearer yaroqsiz"
+    response = await client.get("/api/auth/me")
+    assert response.status_code == 401
+
+
+async def test_token_without_sub(client: AsyncClient):
+    token = security.create_access_token(data={})
+    client.headers["Authorization"] = f"Bearer {token}"
     response = await client.get("/api/auth/me")
     assert response.status_code == 401

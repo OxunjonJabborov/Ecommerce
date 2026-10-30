@@ -1,8 +1,7 @@
 import jwt
 import security
 
-from fastapi.params import Depends
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -22,9 +21,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
-        user_id: int | None = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if user_id is None:
-            return credentials_exception
+            raise credentials_exception
 
     except jwt.InvalidTokenError:
         raise credentials_exception
