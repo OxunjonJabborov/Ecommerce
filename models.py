@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, Float,
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from enums import Roles
 
 
 class User(Base):
@@ -12,7 +13,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(length=100), unique=True)
     hashed_password: Mapped[str] = mapped_column(String(length=255))
-    role: Mapped[str] = mapped_column(Enum("admin", "seller", "buyer"), default="buyer")
+    role: Mapped[str] = mapped_column(Enum(*[role.value for role in Roles]), default=Roles.BUYER.value)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     profile: Mapped["Profile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")

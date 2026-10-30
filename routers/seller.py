@@ -32,7 +32,7 @@ async def upload_product_image(product_id: int, file: UploadFile = File(...), cu
     product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
-    if current_user.id != product.seller_id and current_user.role != "admin":
+    if current_user.id != product.seller_id and current_user.role != Roles.ADMIN:
         raise HTTPException(status_code=403, detail="Bu sizning mahsulotingiz emas...")
 
     file_extension = (file.filename or "").split(".", 1)[-1] if "." in (file.filename or "") else "bin"
@@ -54,7 +54,7 @@ async def update_product(product_id: int, data: ProductUpdate, current_user: Use
     product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
-    if current_user.id != product.seller_id and current_user.role != "admin":
+    if current_user.id != product.seller_id and current_user.role != Roles.ADMIN:
         raise HTTPException(status_code=403, detail="Bu sizning mahsulotingiz emas...")
 
     for key, value in data.model_dump(exclude_none=True).items():
@@ -71,7 +71,7 @@ async def delete_product(product_id: int, current_user: User = Depends(role_chec
     product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
-    if current_user.id != product.seller_id and current_user.role != "admin":
+    if current_user.id != product.seller_id and current_user.role != Roles.ADMIN:
         raise HTTPException(status_code=403, detail="Bu siznig mahsulotingiz emas, uni o'chirolmaysiz...")
 
     await db.delete(product)
