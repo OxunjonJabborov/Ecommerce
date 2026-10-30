@@ -1,8 +1,6 @@
 import shutil
 import uuid
 
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 
@@ -31,9 +29,8 @@ async def create_product(product_in: ProductCreate, current_user: User = Depends
     product = Product(**product_in.model_dump(), seller_id=current_user.id)
     db.add(product)
     await db.commit()
-
-    result = await db.scalar(select(Product).where(Product.id == product.id).options(selectinload(Product.tags)))
-    return result
+    await db.refresh(product)
+    return product
 
 
 @seller_router.post("/products/{product_id}/image")
@@ -48,9 +45,7 @@ async def upload_product_image(product_id: int, file: UploadFile = File(...), cu
         shutil.copyfileobj(file.file, buffer)
 
     product.image_url = static_location
-    db.add(product)
     await db.commit()
-    await db.refresh(product)
     return {"detail": "Mahsulot rasmi muvaffaqiyatli yuklandi...", "image_url": static_location}
 
 
@@ -62,9 +57,7 @@ async def update_product(product_id: int, data: ProductUpdate, current_user: Use
         setattr(product, key, value)
 
     await db.commit()
-
-    result = await db.scalar(select(Product).where(Product.id == product.id).options(selectinload(Product.tags)))
-    return result
+    return product
 
 
 @seller_router.delete("/products/{product_id}")

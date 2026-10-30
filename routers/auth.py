@@ -70,16 +70,13 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @auth_router.put("/me/profile", response_model=UserOut)
 async def update_profile(data: ProfileUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    profile = await db.scalar(select(Profile).where(Profile.user_id == current_user.id))
-    if not profile:
-        profile = Profile(user_id=current_user.id)
-        db.add(profile)
+    if current_user.profile is None:
+        current_user.profile = Profile()
 
     for key, value in data.model_dump(exclude_none=True).items():
-        setattr(profile, key, value)
+        setattr(current_user.profile, key, value)
 
     await db.commit()
-    await db.refresh(current_user)
     return current_user
 
 

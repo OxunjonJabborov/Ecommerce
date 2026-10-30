@@ -30,7 +30,6 @@ async def update_role(user_id: int, new_role: Roles, db: AsyncSession = Depends(
     user = await get_user_or_404(user_id, db)
     user.role = new_role.value
     await db.commit()
-    await db.refresh(user)
     return user
 
 
