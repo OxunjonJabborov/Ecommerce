@@ -1,20 +1,14 @@
-import pytest_asyncio
+import os
 
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+# Ilova modullari import qilinishidan oldin o'rnatilishi shart
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
+os.environ.setdefault("SECRET_KEY", "test-secret-key-faqat-testlar-uchun-32-belgi")
 
-from main import app
-from database import Base, get_db
+import pytest_asyncio  # noqa: E402
+from httpx import AsyncClient, ASGITransport  # noqa: E402
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
-
-engine = create_async_engine(TEST_DATABASE_URL)
-TestSession = async_sessionmaker(bind=engine, expire_on_commit=False)
-
-
-async def override_get_db():
-    async with TestSession() as session:
-        yield session
+from main import app  # noqa: E402
+from database import Base, engine  # noqa: E402
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -28,10 +22,8 @@ async def setup_db():
 
 @pytest_asyncio.fixture
 async def client():
-    app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
-    app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
