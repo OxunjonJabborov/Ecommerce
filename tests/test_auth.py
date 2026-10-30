@@ -78,6 +78,7 @@ async def test_upload_avatar(auth_client: AsyncClient):
     response = await auth_client.post("/api/auth/avatar", files={"file": ("rasm.png", b"fake", "image/png")})
     assert response.status_code == 200
     assert response.json()["avatar_url"] == "/uploads/avatars/1_avatar.png"
+    assert (await auth_client.get("/uploads/avatars/1_avatar.png")).content == b"fake"
 
     me = await auth_client.get("/api/auth/me")
     assert me.json()["profile"]["avatar_url"] == "/uploads/avatars/1_avatar.png"

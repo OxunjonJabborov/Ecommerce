@@ -1,4 +1,3 @@
-import shutil
 import security
 
 from sqlalchemy import select, func
@@ -12,6 +11,7 @@ from database import get_db
 from config import ADMIN_SECRET_KEY, AVATAR_FOLDER
 from models import User, Profile
 from dependencies import get_current_user
+from storage import save_upload
 from schemas.users import UserCreate, UserOut, ProfileUpdate, Token
 
 
@@ -82,17 +82,10 @@ async def update_profile(data: ProfileUpdate, current_user: User = Depends(get_c
 
 @auth_router.post("/avatar")
 async def upload_avatar(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    file_extension = (file.filename or "").rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin"
-    file_location = f"{AVATAR_FOLDER}/{current_user.id}_avatar.{file_extension}"
-    static_location = f"/uploads/avatars/{current_user.id}_avatar.{file_extension}"
-
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    profile = await db.scalar(select(Profile).where(Profile.user_id == current_user.id))
-    if not profile:
+    if current_user.profile is None:
         raise HTTPException(status_code=404, detail="Profil topilmadi...")
 
-    profile.avatar_url = static_location
+    avatar_url = save_upload(file, AVATAR_FOLDER, f"{current_user.id}_avatar")
+    current_user.profile.avatar_url = avatar_url
     await db.commit()
-    return {"detail": "Avatar yuklandi...", "avatar_url": static_location}
+    return {"detail": "Avatar yuklandi...", "avatar_url": avatar_url}

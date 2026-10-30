@@ -29,7 +29,7 @@ async def log_request(request: Request, call_next):
     return response
 
 # 2. Static files
-app.mount("/uploads", StaticFiles(directory=UPLOAD_FOLDER), name="uploads")
+app.mount(f"/{UPLOAD_FOLDER}", StaticFiles(directory=UPLOAD_FOLDER), name="uploads")
 
 # 3. Routerlar
 app.include_router(auth_router)

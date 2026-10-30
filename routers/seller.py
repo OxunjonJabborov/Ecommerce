@@ -1,4 +1,3 @@
-import shutil
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +8,7 @@ from database import get_db
 from config import PRODUCT_FOLDER
 from models import User, Product
 from dependencies import role_checker
+from storage import save_upload
 from schemas.ecommerce import ProductCreate, ProductUpdate, ProductOut
 
 
@@ -37,16 +37,9 @@ async def create_product(product_in: ProductCreate, current_user: User = Depends
 async def upload_product_image(product_id: int, file: UploadFile = File(...), current_user: User = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: AsyncSession = Depends(get_db)):
     product = await get_own_product(product_id, current_user, db)
 
-    file_extension = (file.filename or "").split(".", 1)[-1] if "." in (file.filename or "") else "bin"
-    filename = f"{uuid.uuid4()}.{file_extension}"
-    file_location = f"{PRODUCT_FOLDER}/{filename}"
-    static_location = f"/uploads/products/{filename}"
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    product.image_url = static_location
+    product.image_url = save_upload(file, PRODUCT_FOLDER, str(uuid.uuid4()))
     await db.commit()
-    return {"detail": "Mahsulot rasmi muvaffaqiyatli yuklandi...", "image_url": static_location}
+    return {"detail": "Mahsulot rasmi muvaffaqiyatli yuklandi...", "image_url": product.image_url}
 
 
 @seller_router.put("/products/{product_id}", response_model=ProductOut)
