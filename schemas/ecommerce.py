@@ -6,36 +6,7 @@ class TagBase(BaseModel):
     name: str = Field(max_length=50)
 
 
-class TagCreate(TagBase):
-    pass
-
-
-class TagUpdate(TagBase):
-    pass
-
-
 class TagOut(TagBase):
-    id: int
-    model_config = {"from_attributes": True}
-
-
-class CategoryBase(BaseModel):
-    name: str = Field(max_length=100)
-    slug: str = Field(max_length=100)
-    parent_id: int | None = None
-
-
-class CategoryCreate(CategoryBase):
-    pass
-
-
-class CategoryUpdate(BaseModel):
-    name: str | None = Field(None, max_length=100)
-    slug: str | None = Field(None, max_length=100)
-    parent_id: int | None = None
-
-
-class CategoryOut(CategoryBase):
     id: int
     model_config = {"from_attributes": True}
 
@@ -85,10 +56,6 @@ class OrderItemOut(BaseModel):
 
 class OrderCreate(BaseModel):
     items: list[OrderItemCreate]
-
-
-class OrderUpdate(BaseModel):
-    status: str | None = None
 
 
 class OrderOut(BaseModel):

@@ -35,16 +35,6 @@ class UserOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UserUpdate(BaseModel):
-    email: EmailStr | None = None
-    password: str | None = Field(None, min_length=6)
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
