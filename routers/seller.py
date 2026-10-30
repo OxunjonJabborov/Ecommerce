@@ -3,13 +3,13 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import AsyncSession as Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 
 from enums import Roles
 from database import get_db
 from config import PRODUCT_FOLDER
-from models import Users, Products
+from models import User, Product
 from dependencies import role_checker
 from schemas.ecommerce import ProductCreate, ProductUpdate, ProductOut
 
@@ -18,18 +18,18 @@ seller_router = APIRouter(prefix="/api/seller", tags=["Seller"])
 
 
 @seller_router.post("/products", response_model=ProductOut)
-async def create_product(product_in: ProductCreate, current_user: Users = Depends(role_checker(Roles.ADMIN, Roles.SELLER)), db: Session = Depends(get_db)):
-    product = Products(**product_in.model_dump(), seller_id=current_user.id)
+async def create_product(product_in: ProductCreate, current_user: User = Depends(role_checker(Roles.ADMIN, Roles.SELLER)), db: AsyncSession = Depends(get_db)):
+    product = Product(**product_in.model_dump(), seller_id=current_user.id)
     db.add(product)
     await db.commit()
 
-    result = await db.scalar(select(Products).where(Products.id == product.id).options(selectinload(Products.tags)))
+    result = await db.scalar(select(Product).where(Product.id == product.id).options(selectinload(Product.tags)))
     return result
 
 
 @seller_router.post("/products/{product_id}/image")
-async def upload_product_image(product_id: int, file: UploadFile = File(...), current_user: Users = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: Session = Depends(get_db)):
-    product = await db.scalar(select(Products).where(Products.id == product_id))
+async def upload_product_image(product_id: int, file: UploadFile = File(...), current_user: User = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: AsyncSession = Depends(get_db)):
+    product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
     if current_user.id != product.seller_id and current_user.role != "admin":
@@ -50,8 +50,8 @@ async def upload_product_image(product_id: int, file: UploadFile = File(...), cu
 
 
 @seller_router.put("/products/{product_id}", response_model=ProductOut)
-async def update_product(product_id: int, data: ProductUpdate, current_user: Users = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: Session = Depends(get_db)):
-    product = await db.scalar(select(Products).where(Products.id == product_id))
+async def update_product(product_id: int, data: ProductUpdate, current_user: User = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: AsyncSession = Depends(get_db)):
+    product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
     if current_user.id != product.seller_id and current_user.role != "admin":
@@ -62,13 +62,13 @@ async def update_product(product_id: int, data: ProductUpdate, current_user: Use
 
     await db.commit()
 
-    result = await db.scalar(select(Products).where(Products.id == product.id).options(selectinload(Products.tags)))
+    result = await db.scalar(select(Product).where(Product.id == product.id).options(selectinload(Product.tags)))
     return result
 
 
 @seller_router.delete("/products/{product_id}")
-async def delete_product(product_id: int, current_user: Users = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: Session = Depends(get_db)):
-    product = await db.scalar(select(Products).where(Products.id == product_id))
+async def delete_product(product_id: int, current_user: User = Depends(role_checker(Roles.SELLER, Roles.ADMIN)), db: AsyncSession = Depends(get_db)):
+    product = await db.scalar(select(Product).where(Product.id == product_id))
     if not product:
         raise HTTPException(status_code=404, detail="Mahsulot topilmadi...")
     if current_user.id != product.seller_id and current_user.role != "admin":

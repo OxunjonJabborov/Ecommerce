@@ -1,10 +1,10 @@
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession as Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, HTTPException, Depends
 
 from enums import Roles
 from database import get_db
-from models import Users
+from models import User
 from dependencies import role_checker
 from schemas.users import UserOut
 
@@ -13,14 +13,14 @@ admin_router = APIRouter(prefix="/api/admins", tags=["Admin"])
 
 
 @admin_router.get("/users", response_model=list[UserOut])
-async def get_all_users(db: Session = Depends(get_db), _user: Users = Depends(role_checker((Roles.ADMIN)))):
-    result = await db.scalars(select(Users))
+async def get_all_users(db: AsyncSession = Depends(get_db), _user: User = Depends(role_checker((Roles.ADMIN)))):
+    result = await db.scalars(select(User))
     return result.all()
 
 
 @admin_router.put("/users/{user_id}/role", response_model=UserOut)
-async def update_role(user_id: int, new_role: Roles, db: Session = Depends(get_db), _user: Users = Depends(role_checker(Roles.ADMIN))):
-    user = await db.scalar(select(Users).where(Users.id == user_id))
+async def update_role(user_id: int, new_role: Roles, db: AsyncSession = Depends(get_db), _user: User = Depends(role_checker(Roles.ADMIN))):
+    user = await db.scalar(select(User).where(User.id == user_id))
     if not user:
         raise HTTPException(status_code=404, detail='Foydalanuvchi topilmadi...')
 
@@ -31,8 +31,8 @@ async def update_role(user_id: int, new_role: Roles, db: Session = Depends(get_d
 
 
 @admin_router.delete("/users/{user_id}")
-async def delete_user(user_id: int, db: Session = Depends(get_db), _user: Users = Depends(role_checker(Roles.ADMIN))):
-    user = await db.scalar(select(Users).where(Users.id == user_id))
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), _user: User = Depends(role_checker(Roles.ADMIN))):
+    user = await db.scalar(select(User).where(User.id == user_id))
     if not user:
         raise HTTPException(status_code=404, detail="foydalanuvchi topilmadi...")
 

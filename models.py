@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
 
-class Users(Base):
+class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -15,12 +15,12 @@ class Users(Base):
     role: Mapped[str] = mapped_column(Enum("admin", "seller", "buyer"), default="buyer")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    profile: Mapped["Profiles"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
-    products: Mapped[list["Products"]] = relationship(back_populates="seller", cascade="all, delete-orphan")
-    orders: Mapped[list["Orders"]] = relationship(back_populates="buyer", cascade="all, delete-orphan")
+    profile: Mapped["Profile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+    products: Mapped[list["Product"]] = relationship(back_populates="seller", cascade="all, delete-orphan")
+    orders: Mapped[list["Order"]] = relationship(back_populates="buyer", cascade="all, delete-orphan")
 
 
-class Profiles(Base):
+class Profile(Base):
     __tablename__ = "profiles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -30,10 +30,10 @@ class Profiles(Base):
     address: Mapped[str | None] = mapped_column(String(length=255))
     avatar_url: Mapped[str | None] = mapped_column(String(length=500))
 
-    user: Mapped["Users"] = relationship(back_populates="profile")
+    user: Mapped["User"] = relationship(back_populates="profile")
 
 
-class Categories(Base):
+class Category(Base):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -41,12 +41,12 @@ class Categories(Base):
     slug: Mapped[str] = mapped_column(String(length=100), unique=True)
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
 
-    products: Mapped[list["Products"]] = relationship(back_populates="category", cascade="all, delete-orphan")
-    children: Mapped[list["Categories"]] = relationship(back_populates="parent")
-    parent: Mapped["Categories | None"] = relationship(back_populates="children", remote_side="Categories.id")
+    products: Mapped[list["Product"]] = relationship(back_populates="category", cascade="all, delete-orphan")
+    children: Mapped[list["Category"]] = relationship(back_populates="parent")
+    parent: Mapped["Category | None"] = relationship(back_populates="children", remote_side="Category.id")
 
 
-class Products(Base):
+class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -59,29 +59,29 @@ class Products(Base):
     image_url: Mapped[str | None] = mapped_column(String(length=500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    seller: Mapped["Users"] = relationship(back_populates="products")
-    category: Mapped["Categories | None"] = relationship(back_populates="products")
-    tags: Mapped[list["Tags"]] = relationship(secondary="product_tags", back_populates="products", lazy="selectin")
-    order_items: Mapped[list["OrderItems"]] = relationship(back_populates="product")
+    seller: Mapped["User"] = relationship(back_populates="products")
+    category: Mapped["Category | None"] = relationship(back_populates="products")
+    tags: Mapped[list["Tag"]] = relationship(secondary="product_tags", back_populates="products", lazy="selectin")
+    order_items: Mapped[list["OrderItem"]] = relationship(back_populates="product")
 
 
-class Tags(Base):
+class Tag(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(length=50), unique=True)
 
-    products: Mapped[list["Products"]] = relationship(secondary="product_tags", back_populates="tags")
+    products: Mapped[list["Product"]] = relationship(secondary="product_tags", back_populates="tags")
 
 
-class ProductTags(Base):
+class ProductTag(Base):
     __tablename__ = "product_tags"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
 
 
-class Orders(Base):
+class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -90,11 +90,11 @@ class Orders(Base):
     total_price: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    buyer: Mapped["Users"] = relationship(back_populates="orders")
-    items: Mapped[list["OrderItems"]] = relationship(back_populates="order", cascade="all, delete-orphan", lazy="selectin")
+    buyer: Mapped["User"] = relationship(back_populates="orders")
+    items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan", lazy="selectin")
 
 
-class OrderItems(Base):
+class OrderItem(Base):
     __tablename__ = "order_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -103,5 +103,5 @@ class OrderItems(Base):
     quantity: Mapped[int] = mapped_column(Integer)
     unit_price: Mapped[float] = mapped_column(Float)  # sotib olingan paytdagi narx
 
-    order: Mapped["Orders"] = relationship(back_populates="items")
-    product: Mapped["Products | None"] = relationship(back_populates="order_items")
+    order: Mapped["Order"] = relationship(back_populates="items")
+    product: Mapped["Product | None"] = relationship(back_populates="order_items")
