@@ -1,7 +1,6 @@
 import security
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,37 +17,30 @@ from schemas.users import UserCreate, UserOut, ProfileUpdate, Token
 auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 
+async def resolve_role(user_in: UserCreate, db: AsyncSession) -> str:
+    is_first_user = await db.scalar(select(func.count()).select_from(User)) == 0
+    has_admin_secret = bool(user_in.admin_secret) and user_in.admin_secret == ADMIN_SECRET_KEY
+    if is_first_user or has_admin_secret:
+        return Roles.ADMIN.value
+    return user_in.role.value
+
+
 @auth_router.post("/register", response_model=UserOut)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     existing = await db.scalar(select(User).where(User.email == user_in.email))
     if existing:
         raise HTTPException(status_code=400, detail="Bu email band...")
 
-    user_dict = user_in.model_dump()
-    admin_secret = user_dict.pop("admin_secret", None)
-    hashed_password = security.get_password_hash(user_dict.pop("password"))
-    user_dict.pop("role")
-
-    count = await db.scalar(select(func.count()).select_from(User))
-    if count == 0:
-        role = Roles.ADMIN.value
-    elif admin_secret and admin_secret == ADMIN_SECRET_KEY:
-        role = Roles.ADMIN.value
-    else:
-        role = user_in.role.value
-
-    user = User(**user_dict, hashed_password=hashed_password, role=role)
+    user = User(
+        email=user_in.email,
+        hashed_password=security.get_password_hash(user_in.password),
+        role=await resolve_role(user_in, db),
+        profile=Profile(),
+    )
     db.add(user)
-    await db.flush()
-
-    profile = Profile(user_id=user.id)
-    db.add(profile)
     await db.commit()
-
-    user_id = user.id
-
-    result = await db.scalar(select(User).where(User.id == user.id).options(selectinload(User.profile)))
-    return result
+    await db.refresh(user)
+    return user
 
 
 @auth_router.post("/login", response_model=Token)

@@ -95,3 +95,22 @@ async def test_token_without_sub(client: AsyncClient):
     client.headers["Authorization"] = f"Bearer {token}"
     response = await client.get("/api/auth/me")
     assert response.status_code == 401
+
+
+async def test_register_with_admin_secret(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr("routers.auth.ADMIN_SECRET_KEY", "maxfiy")
+    await client.post("/api/auth/register", json={"email": "first@test.com", "password": "test1234"})
+
+    correct = await client.post("/api/auth/register", json={
+        "email": "admin2@test.com", "password": "test1234", "admin_secret": "maxfiy",
+    })
+    wrong = await client.post("/api/auth/register", json={
+        "email": "seller@test.com", "password": "test1234", "role": "seller", "admin_secret": "xato",
+    })
+    assert correct.json()["role"] == "admin"
+    assert wrong.json()["role"] == "seller"
+
+
+async def test_register_creates_empty_profile(client: AsyncClient):
+    response = await client.post("/api/auth/register", json={"email": "user@test.com", "password": "test1234"})
+    assert response.json()["profile"] == {"full_name": None, "phone": None, "address": None, "avatar_url": None}
