@@ -44,10 +44,11 @@ async def create_order(order_in: OrderCreate, current_user: Users = Depends(role
         total += product.price * item_data.quantity
 
         db.add(OrderItems(order_id=order.id, product_id=product.id, quantity=item_data.quantity, unit_price=product.price))
-        order.total_price = total
-        await db.commit()
-        await db.refresh(order)
-        return order
+
+    order.total_price = total
+    await db.commit()
+    await db.refresh(order)
+    return order
 
 
 @buyer_router.get("/orders/my", response_model=list[OrderOut])
